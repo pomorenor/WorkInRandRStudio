@@ -1,14 +1,6 @@
 library("dplyr")
 library("readxl")
 
-#Some functions we require 
-
-isNotBlank <- function(x) {
-  nchar(trimws(x)) > 0
-}
-
-
-
 
 rawData <- read_xlsx("PrincipalData.xlsx")
 preparedData <- read_xlsx("2023-2ToFill.xlsx")
@@ -59,7 +51,7 @@ first_Filter_criteria
 
 numOfLecturesPerProf <- rawData %>% 
   select(PPAL_NOMPRS, NOMBRE_ASS, `NÚMERO DE HORAS SEMANALES`, Pregrado, `NÚMERO DE INSCRITOS ACTUAL`, `NÚMERO DE HORAS SEMANALES`) %>%
-  filter(PPAL_NOMPRS == "Angelica Maria Gonzalez Clavijo", 
+  filter(PPAL_NOMPRS == "Omar Joaquin Agudelo Suarez", 
          !(NOMBRE_ASS %in% first_Filter_criteria), 
          !is.na(Pregrado),
          !is.na(`NÚMERO DE INSCRITOS ACTUAL`),
@@ -73,6 +65,14 @@ numOfLecturesPerProf <- rawData %>%
   )
 
 numOfLecturesPerProf
+
+dataFrameProf <- data.frame(
+  PPAL_NOMPRS = c(numOfLecturesPerProf$PPAL_NOMPRS[[1]]),
+  Hours = c( sum(as.numeric(numOfLecturesPerProf$`NÚMERO DE HORAS SEMANALES`)))
+                            )
+
+dataFrameProf
+
 
 totalHoursPreg <- sum(as.numeric(numOfLecturesPerProf$`NÚMERO DE HORAS SEMANALES`))
 
