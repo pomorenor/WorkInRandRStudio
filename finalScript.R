@@ -25,8 +25,10 @@ namesAsignaturas <- unique(consolidado$ASIGNATURA)
 
 
 exceptionCriteria <- c('Trabajo de Grado', 'Proyecto de tesis', 'Tesis', 'tesis', 'Pasantía', 'Examen')
-first_Filter_criteria <- list()
+exceptionCriteria2 <- c('Seminario', 'seminario')
 
+first_Filter_criteria <- list()
+polished_filter <- list()
 
 for(i in namesActivities){
   for(j in exceptionCriteria) {
@@ -36,4 +38,21 @@ for(i in namesActivities){
   }
 }
 
-first_Filter_criteria
+for(i in first_Filter_criteria){
+  for(j in exceptionCriteria2) {
+    if ( j %in% i  == FALSE){
+      polished_filter[[length(polished_filter) + 1]] = i
+    }
+  }
+}
+
+polished_filter
+
+
+
+
+
+
+
+
+
