@@ -1,6 +1,15 @@
 library("dplyr")
 library("readxl")
 
+#Some functions we require 
+
+isNotBlank <- function(x) {
+  nchar(trimws(x)) > 0
+}
+
+
+
+
 rawData <- read_xlsx("PrincipalData.xlsx")
 preparedData <- read_xlsx("2023-2ToFill.xlsx")
 consolidado <- read_xlsx("Consolidado.xlsx")
@@ -24,35 +33,33 @@ namesTipologies <- unique(consolidado$TIPOLOGÍAS)
 namesAsignaturas <- unique(consolidado$ASIGNATURA)
 
 
-exceptionCriteria <- c('Trabajo de Grado', 'Proyecto de tesis', 'Tesis', 'tesis', 'Pasantía', 'Examen')
-exceptionCriteria2 <- c('Seminario', 'seminario')
+exceptionCriteria <- c('Trabajo de Grado', 'Proyecto de tesis', 'Tesis', 'tesis', 'Pasantía', 'Examen', 'Especialidad', 'especialización', 'final',
+                       'proyecto de grado', 'especialidades', 'práctica profesional', 'posgrado')
 
 first_Filter_criteria <- list()
 polished_filter <- list()
 
 for(i in namesActivities){
   for(j in exceptionCriteria) {
-    if (grepl(j,i)){
+    if (grepl(j,i, ignore.case = TRUE)){
       first_Filter_criteria[[length(first_Filter_criteria) + 1]] = i
     }
   }
 }
 
-for(i in first_Filter_criteria){
-  for(j in exceptionCriteria2) {
-    if ( j %in% i  == FALSE){
-      polished_filter[[length(polished_filter) + 1]] = i
-    }
-  }
-}
 
-polished_filter
+polished_filter_indices <- grep("seminario", first_Filter_criteria, ignore.case = TRUE)
+first_Filter_criteria <- first_Filter_criteria[-polished_filter_indices]
+first_Filter_criteria <-unique(first_Filter_criteria)
+
+# For now it is fine. Ich muss einige Sätze korrigieren
 
 
+numOfLecturesPerProf <- rawData %>% 
+  select(PPAL_NOMPRS, NOMBRE_ASS, `NÚMERO DE HORAS SEMANALES`, Pregrado) %>%
+  filter(PPAL_NOMPRS == "Ana Adarve", !(NOMBRE_ASS %in% first_Filter_criteria), isNotBlank(Pregrado))
 
-
-
-
+totalHoursPreg <- sum(numOfLecturesPerProf$`NÚMERO DE HORAS SEMANALES`)
 
 
 
