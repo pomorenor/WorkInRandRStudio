@@ -1,6 +1,6 @@
 library("dplyr")
 library("readxl")
-
+library("writexl")
 
 rawData <- read_xlsx("PrincipalData.xlsx")
 preparedData <- read_xlsx("2023-2ToFill.xlsx")
@@ -59,7 +59,7 @@ SummarizedProfInfo <- data.frame(
 for (value in unique(rawData$PPAL_NOMPRS)){
   numOfLecturesPerProf <- rawData %>% 
     select(PPAL_NOMPRS, NOMBRE_ASS, `NÚMERO DE HORAS SEMANALES`, Pregrado, `NÚMERO DE INSCRITOS ACTUAL`, `NÚMERO DE HORAS SEMANALES`) %>%
-    filter(PPAL_NOMPRS == "Omar Joaquin Agudelo Suarez", 
+    filter(PPAL_NOMPRS == value, 
            !(NOMBRE_ASS %in% first_Filter_criteria), 
            !is.na(Pregrado),
            !is.na(`NÚMERO DE INSCRITOS ACTUAL`),
@@ -73,14 +73,17 @@ for (value in unique(rawData$PPAL_NOMPRS)){
     )
 
   
-  #numOfLecturesPerProf
+  if (nrow(numOfLecturesPerProf) != 0){
   
-  SummarizedProfInfo <- rbind(SummarizedProfInfo, c(numOfLecturesPerProf$PPAL_NOMPRS[[1]]), 
-                              sum(as.numeric(numOfLecturesPerProf$`NÚMERO DE HORAS SEMANALES`)))
+    newRow <- data.frame(
+      `NOMBRES Y APELLIDOS`= numOfLecturesPerProf$PPAL_NOMPRS[[1]],
+      `HORAS PREGRADO 2023-1`= sum(as.numeric(numOfLecturesPerProf$`NÚMERO DE HORAS SEMANALES`))
+    )
+    
+    SummarizedProfInfo <- rbind(SummarizedProfInfo, newRow)
+  }
 }                        
 
-
-#dataFrameProf
-#totalHoursPreg <- sum(as.numeric(numOfLecturesPerProf$`NÚMERO DE HORAS SEMANALES`))
-
+excel_output <- "SumInfo.xlsx"
+write_xlsx(SummarizedProfInfo, excel_output)
 
