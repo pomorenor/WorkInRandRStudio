@@ -23,16 +23,8 @@ namesActivities <- unique(rawData$NOMBRE_ASS)
 namesTipologies <- unique(consolidado$TIPOLOGÍAS)
 namesAsignaturas <- unique(consolidado$ASIGNATURA)
 
-  
 
-
-
-
-
-
-
-############ Let us leave this for later
-exceptionCriteria <- c('Tesis', 'tesis', 'Pasantía', 'Proyecto', 'Grado', 'Examen', 'Posgrado')
+exceptionCriteria <- c('Trabajo de Grado', 'Proyecto de tesis', 'Tesis', 'tesis', 'Pasantía', 'Examen')
 first_Filter_criteria <- list()
 
 
