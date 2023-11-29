@@ -56,31 +56,31 @@ SummarizedProfInfo <- data.frame(
   `HORAS PREGRADO 2023-1` = c()
 )
 
-numOfLecturesPerProf <- rawData %>% 
-  select(PPAL_NOMPRS, NOMBRE_ASS, `NÚMERO DE HORAS SEMANALES`, Pregrado, `NÚMERO DE INSCRITOS ACTUAL`, `NÚMERO DE HORAS SEMANALES`) %>%
-  filter(PPAL_NOMPRS == "Omar Joaquin Agudelo Suarez", 
-         !(NOMBRE_ASS %in% first_Filter_criteria), 
-         !is.na(Pregrado),
-         !is.na(`NÚMERO DE INSCRITOS ACTUAL`),
-         ) %>%
-  mutate(
-    `NÚMERO DE HORAS SEMANALES` =if_else(
-      is.na(`NÚMERO DE HORAS SEMANALES`),
-      "2",
-      `NÚMERO DE HORAS SEMANALES`
+for (value in unique(rawData$PPAL_NOMPRS)){
+  numOfLecturesPerProf <- rawData %>% 
+    select(PPAL_NOMPRS, NOMBRE_ASS, `NÚMERO DE HORAS SEMANALES`, Pregrado, `NÚMERO DE INSCRITOS ACTUAL`, `NÚMERO DE HORAS SEMANALES`) %>%
+    filter(PPAL_NOMPRS == "Omar Joaquin Agudelo Suarez", 
+           !(NOMBRE_ASS %in% first_Filter_criteria), 
+           !is.na(Pregrado),
+           !is.na(`NÚMERO DE INSCRITOS ACTUAL`),
+           ) %>%
+    mutate(
+      `NÚMERO DE HORAS SEMANALES` =if_else(
+        is.na(`NÚMERO DE HORAS SEMANALES`),
+        "2",
+        `NÚMERO DE HORAS SEMANALES`
+      )
     )
-  )
 
-numOfLecturesPerProf
-
-SummarizedProfInfo <- rbind(SummarizedProfInfo, c(numOfLecturesPerProf$PPAL_NOMPRS[[1]]), 
-                            sum(as.numeric(numOfLecturesPerProf$`NÚMERO DE HORAS SEMANALES`)))
-                            
-
-
-dataFrameProf
+  
+  #numOfLecturesPerProf
+  
+  SummarizedProfInfo <- rbind(SummarizedProfInfo, c(numOfLecturesPerProf$PPAL_NOMPRS[[1]]), 
+                              sum(as.numeric(numOfLecturesPerProf$`NÚMERO DE HORAS SEMANALES`)))
+}                        
 
 
-totalHoursPreg <- sum(as.numeric(numOfLecturesPerProf$`NÚMERO DE HORAS SEMANALES`))
+#dataFrameProf
+#totalHoursPreg <- sum(as.numeric(numOfLecturesPerProf$`NÚMERO DE HORAS SEMANALES`))
 
 
