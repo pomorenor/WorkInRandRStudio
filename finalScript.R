@@ -49,6 +49,13 @@ first_Filter_criteria
 # For now it is fine. Ich muss einige Sätze korrigieren
 
 
+# We create the dataframe to store the compendium of info
+
+SummarizedProfInfo <- data.frame(
+  `NOMBRES Y APELLIDOS`= c(),
+  `HORAS PREGRADO 2023-1` = c()
+)
+
 numOfLecturesPerProf <- rawData %>% 
   select(PPAL_NOMPRS, NOMBRE_ASS, `NÚMERO DE HORAS SEMANALES`, Pregrado, `NÚMERO DE INSCRITOS ACTUAL`, `NÚMERO DE HORAS SEMANALES`) %>%
   filter(PPAL_NOMPRS == "Omar Joaquin Agudelo Suarez", 
@@ -66,10 +73,10 @@ numOfLecturesPerProf <- rawData %>%
 
 numOfLecturesPerProf
 
-dataFrameProf <- data.frame(
-  PPAL_NOMPRS = c(numOfLecturesPerProf$PPAL_NOMPRS[[1]]),
-  Hours = c( sum(as.numeric(numOfLecturesPerProf$`NÚMERO DE HORAS SEMANALES`)))
-                            )
+SummarizedProfInfo <- rbind(SummarizedProfInfo, c(numOfLecturesPerProf$PPAL_NOMPRS[[1]]), 
+                            sum(as.numeric(numOfLecturesPerProf$`NÚMERO DE HORAS SEMANALES`)))
+                            
+
 
 dataFrameProf
 
