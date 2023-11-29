@@ -52,14 +52,28 @@ polished_filter_indices <- grep("seminario", first_Filter_criteria, ignore.case 
 first_Filter_criteria <- first_Filter_criteria[-polished_filter_indices]
 first_Filter_criteria <-unique(first_Filter_criteria)
 
+first_Filter_criteria
+
 # For now it is fine. Ich muss einige Sätze korrigieren
 
 
 numOfLecturesPerProf <- rawData %>% 
-  select(PPAL_NOMPRS, NOMBRE_ASS, `NÚMERO DE HORAS SEMANALES`, Pregrado) %>%
-  filter(PPAL_NOMPRS == "Ana Adarve", !(NOMBRE_ASS %in% first_Filter_criteria), isNotBlank(Pregrado))
+  select(PPAL_NOMPRS, NOMBRE_ASS, `NÚMERO DE HORAS SEMANALES`, Pregrado, `NÚMERO DE INSCRITOS ACTUAL`, `NÚMERO DE HORAS SEMANALES`) %>%
+  filter(PPAL_NOMPRS == "Angelica Maria Gonzalez Clavijo", 
+         !(NOMBRE_ASS %in% first_Filter_criteria), 
+         !is.na(Pregrado),
+         !is.na(`NÚMERO DE INSCRITOS ACTUAL`),
+         ) %>%
+  mutate(
+    `NÚMERO DE HORAS SEMANALES` =if_else(
+      is.na(`NÚMERO DE HORAS SEMANALES`),
+      "2",
+      `NÚMERO DE HORAS SEMANALES`
+    )
+  )
 
-totalHoursPreg <- sum(numOfLecturesPerProf$`NÚMERO DE HORAS SEMANALES`)
+numOfLecturesPerProf
 
+totalHoursPreg <- sum(as.numeric(numOfLecturesPerProf$`NÚMERO DE HORAS SEMANALES`))
 
 
