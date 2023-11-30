@@ -82,7 +82,15 @@ for (value in unique(rawData$PPAL_NOMPRS)){
     
     SummarizedProfInfo <- rbind(SummarizedProfInfo, newRow)
   }
-}                        
+}                     
+
+## Now we cross our summarized information with what we've got in the form to fill 
+
+
+
+
+### Finally we print to an excel file   
+
 
 excel_output <- "SumInfo.xlsx"
 write_xlsx(SummarizedProfInfo, excel_output)
