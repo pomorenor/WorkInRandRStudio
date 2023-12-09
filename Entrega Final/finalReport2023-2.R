@@ -155,7 +155,52 @@ for (name in unique(rawData$PPAL_NOMPRS)){
 }
 
 
-write_xlsx(SummarizedProfInfo, "PregradInfoTest.xlsx")
+#write_xlsx(SummarizedProfInfo, "PregradInfoTest.xlsx")
+
+#Now we do the same but for the graduate info
+
+
+SummarizedProfInfoGrad <- data.frame(
+  `APELLIDOS Y NOMBRES`= c(),
+  `CURSOS POSGRADO 2023-1`= c(),
+  `HORAS POSGRADO 2023-1` = c(),
+  `ESTUDIANTES POSGRADO 2023-1` = c()
+)
+
+
+for (name in unique(rawData$PPAL_NOMPRS)){
+  gradInfoPerProf <- rawData %>%
+    select(PPAL_NOMPRS, NOMBRE_ASS, `NÚMERO DE HORAS SEMANALES`, Pregrado ,`Postgrados y másteres`, `NÚMERO DE INSCRITOS ACTUAL`, `NÚMERO DE HORAS SEMANALES`) %>%
+    filter(
+      PPAL_NOMPRS == name,
+      is.na(Pregrado),
+      !is.na(`Postgrados y másteres`),
+      !is.na(`NÚMERO DE INSCRITOS ACTUAL`)
+    ) %>%
+    mutate(
+      `NÚMERO DE HORAS SEMANALES` = if_else(
+        is.na(`NÚMERO DE HORAS SEMANALES`),
+        "2",
+        `NÚMERO DE HORAS SEMANALES`
+      )
+    )
+  
+  if (nrow(gradInfoPerProf) != 0){
+    
+    numLecturesPosgrado <- gradInfoPerProf %>%
+      count(`Postgrados y másteres`)
+    
+    newRow <- data.frame(
+      `APELLIDOS Y NOMBRES` = gradInfoPerProf$PPAL_NOMPRS[[1]],
+      `CURSOS POSGRADO 2023-1`= numLecturesPosgrado,
+      `HORAS POSGRADO 2023-1` = sum(as.numeric(gradInfoPerProf$`NÚMERO DE HORAS SEMANALES`)),
+      `ESTUDIANTES POSGRADO 2023-1` =  sum(as.numeric(gradInfoPerProf$`NÚMERO DE INSCRITOS ACTUAL`))
+    )
+  }
+}
+
+print(SummarizedProfInfoGrad)
+
 
 #nombresProfs_rawData <- tolower(unique(rawData$PPAL_NOMPRS))
 #nombresProfs_plantaDecargos <- tolower(unique(planta_docente_toworkwith$APELLIDOS.Y.NOMBRES))
