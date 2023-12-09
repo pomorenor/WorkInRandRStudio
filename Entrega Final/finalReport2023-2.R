@@ -155,8 +155,6 @@ for (name in unique(rawData$PPAL_NOMPRS)){
 }
 
 
-#write_xlsx(SummarizedProfInfo, "PregradInfoTest.xlsx")
-
 #Now we do the same but for the graduate info
 
 
@@ -196,15 +194,48 @@ for (name in unique(rawData$PPAL_NOMPRS)){
       `HORAS POSGRADO 2023-1` = sum(as.numeric(gradInfoPerProf$`NÚMERO DE HORAS SEMANALES`)),
       `ESTUDIANTES POSGRADO 2023-1` =  sum(as.numeric(gradInfoPerProf$`NÚMERO DE INSCRITOS ACTUAL`))
     )
+    
+    SummarizedProfInfoGrad <- rbind(SummarizedProfInfoGrad, newRow)
+    
   }
 }
 
-print(SummarizedProfInfoGrad)
 
+SummarizedProfInfoGrad
 
 #nombresProfs_rawData <- tolower(unique(rawData$PPAL_NOMPRS))
 #nombresProfs_plantaDecargos <- tolower(unique(planta_docente_toworkwith$APELLIDOS.Y.NOMBRES))
 
 
+totalData <- merge(SummarizedProfInfo, SummarizedProfInfoGrad, by = "APELLIDOS.Y.NOMBRES" )
+
+
+## Now comes the tricky part, relating the names with the different writting
+
+namesPlanta <- tolower(unique(planta_docente_toworkwith$APELLIDOS.Y.NOMBRES))
+namesRaw <- tolower(unique(rawData$PPAL_NOMPRS))
+
+match_indices <- c()
+
+for (name in namesRaw){
+  for (nom in namesPlanta){
+    match <- stringdist::amatch(name,  nom, method = "jaccard")
+    if (!is.na(match)){  
+      print(paste(name, nom))
+    }
+  }
+}
+
+
+clean_match_indices <- na.omit(match_indices)
+
+namesFound <- data.frame(NOMBRES = unique(planta_docente_toworkwith$APELLIDOS.Y.NOMBRES[clean_match_indices]))
+
+
+length(unique(planta_docente_toworkwith$APELLIDOS.Y.NOMBRES[clean_match_indices]))
+
+length(unique(planta_docente_toworkwith$APELLIDOS.Y.NOMBRES))
+
+write_xlsx(namesFound, "NamesFound.xlsx")
 
 
