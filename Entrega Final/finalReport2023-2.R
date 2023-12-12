@@ -215,39 +215,38 @@ totalData <- merge(SummarizedProfInfo, SummarizedProfInfoGrad, by = "APELLIDOS.Y
 namesPlanta <- tolower(planta_docente_toworkwith$APELLIDOS.Y.NOMBRES)
 namesRaw <- tolower(unique(rawData$PPAL_NOMPRS))
 
-match_indices <- data.frame(NamePlanta = c(),
+
+
+compendium_match_indices <- data.frame(NamePlanta = c(),
                             NameRaw = c(),
                             Distance = c(),
                             Match = c()
-                            )
+)
+
+
+for(name in namesPlanta){
+  
+  match_indices <- data.frame(NamePlanta = c(),
+                              NameRaw = c(),
+                              Distance = c(),
+                              Match = c()
+                              )
+  
+  for(prenom in namesRaw){
+    match <- stringdist::amatch(name, prenom, method = "jaccard")
+    dist <- stringdist(name, prenom, method = "jaccard")
+    new_row <- data.frame(NamePlanta = name, NameRaw = prenom, Distance = dist,
+                          Match = match)
+    match_indices <- rbind(match_indices, new_row)
+    }
+  
+  best_match_data <- match_indices[which.min(match_indices$Distance), ]
+  print(best_match_data)
+  compendium_math_indices <- rbind(compendium_match_indices, best_match_data )
+}
 
 
 
-
-for(prenom in namesRaw){
-  match <- stringdist::amatch("abaunza zafra liliana", prenom, method = "jaccard")
-  dist <- stringdist("abaunza zafra liliana", prenom, method = "jaccard")
-  new_row <- data.frame(NamePlanta = "abaunza zafra liliana", NameRaw = prenom, Distance = dist,
-                        Match = match)
-  match_indices <- rbind(match_indices, new_row)
-  }
-
-match_indices[which.min(match_indices$Distance), ]
-
-
-length(match_indices)
-
-clean_match_indices <- na.omit(match_indices)
-length(clean_match_indices)
-
-
-namesFound <- data.frame(NOMBRES = planta_docente_toworkwith$APELLIDOS.Y.NOMBRES[match_indices])
-
-namesComparison <- data.frame(NAMES = namesFound, names = namesPlanta)
-
-length(unique(planta_docente_toworkwith$APELLIDOS.Y.NOMBRES[clean_match_indices]))
-
-length(unique(planta_docente_toworkwith$APELLIDOS.Y.NOMBRES))
 
 write_xlsx(namesComparison, "NamesFound.xlsx")
 
