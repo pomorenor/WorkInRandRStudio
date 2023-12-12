@@ -6,7 +6,7 @@ library("readxl")
 library("writexl")
 library("stringdist")
 library("openxlsx")
-
+library("gtools")
 
 #Raw data contains all the data related to the lectures and professors, hour per undergrad...
 
@@ -212,30 +212,49 @@ totalData <- merge(SummarizedProfInfo, SummarizedProfInfoGrad, by = "APELLIDOS.Y
 
 ## Now comes the tricky part, relating the names with the different writting
 
-namesPlanta <- tolower(unique(planta_docente_toworkwith$APELLIDOS.Y.NOMBRES))
+namesPlanta <- tolower(planta_docente_toworkwith$APELLIDOS.Y.NOMBRES)
 namesRaw <- tolower(unique(rawData$PPAL_NOMPRS))
 
-match_indices <- c()
+match_indices <- data.frame(NamePlanta = c(),
+                            NameRaw = c(),
+                            Distance = c(),
+                            Match = c()
+                            )
 
-for (name in namesRaw){
-  for (nom in namesPlanta){
-    match <- stringdist::amatch(name,  nom, method = "jaccard")
-    if (!is.na(match)){  
-      print(paste(name, nom))
-    }
+
+
+
+for(prenom in namesRaw){
+  match <- stringdist::amatch("abaunza zafra liliana", prenom, method = "jaccard")
+  dist <- stringdist("abaunza zafra liliana", prenom, method = "jaccard")
+  new_row <- data.frame(NamePlanta = "abaunza zafra liliana", NameRaw = prenom, Distance = dist,
+                        Match = match)
+  match_indices <- rbind(match_indices, new_row)
   }
-}
 
+match_indices[which.min(match_indices$Distance), ]
+
+
+length(match_indices)
 
 clean_match_indices <- na.omit(match_indices)
+length(clean_match_indices)
 
-namesFound <- data.frame(NOMBRES = unique(planta_docente_toworkwith$APELLIDOS.Y.NOMBRES[clean_match_indices]))
 
+namesFound <- data.frame(NOMBRES = planta_docente_toworkwith$APELLIDOS.Y.NOMBRES[match_indices])
+
+namesComparison <- data.frame(NAMES = namesFound, names = namesPlanta)
 
 length(unique(planta_docente_toworkwith$APELLIDOS.Y.NOMBRES[clean_match_indices]))
 
 length(unique(planta_docente_toworkwith$APELLIDOS.Y.NOMBRES))
 
-write_xlsx(namesFound, "NamesFound.xlsx")
+write_xlsx(namesComparison, "NamesFound.xlsx")
+
+
+# We will try doing it in another way
+
+
+
 
 
