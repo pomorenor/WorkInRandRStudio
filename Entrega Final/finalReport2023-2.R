@@ -220,8 +220,10 @@ namesRaw <- tolower(unique(rawData$PPAL_NOMPRS))
 compendium_match_indices <- data.frame(NamePlanta = c(),
                             NameRaw = c(),
                             Distance = c(),
-                            Match = c()
-)
+                            Match = c(),
+                            RawIndex = c()
+                            )
+
 
 
 for(name in namesPlanta){
@@ -229,28 +231,33 @@ for(name in namesPlanta){
   match_indices <- data.frame(NamePlanta = c(),
                               NameRaw = c(),
                               Distance = c(),
-                              Match = c()
-                              )
+                              Match = c(),
+                              RawIndex = c()
+                             )
   
   for(prenom in namesRaw){
     match <- stringdist::amatch(name, prenom, method = "jaccard")
     dist <- stringdist(name, prenom, method = "jaccard")
-    new_row <- data.frame(NamePlanta = name, NameRaw = prenom, Distance = dist,
-                          Match = match)
+    raw_index <- which(namesRaw == prenom)
+    if(length(raw_index) == 0){
+      raw_index <- NA
+    }
+    new_row <- data.frame(NamePlanta = name, NameRaw = prenom, Distance = dist, Match = match,
+                          RawIndex = raw_index)
     match_indices <- rbind(match_indices, new_row)
     }
   
   best_match_data <- match_indices[which.min(match_indices$Distance), ]
-  print(best_match_data)
-  compendium_math_indices <- rbind(compendium_match_indices, best_match_data )
+  #print(best_match_data)
+  compendium_match_indices <- rbind(compendium_match_indices, best_match_data )
 }
 
 
 
 
-write_xlsx(namesComparison, "NamesFound.xlsx")
+write_xlsx(compendium_match_indices, "NamesPlaneAndRaw.xlsx")
 
-
+  
 # We will try doing it in another way
 
 
