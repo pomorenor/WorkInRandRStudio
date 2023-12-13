@@ -311,6 +311,9 @@ HORASDOCENCIA <- c(44,40,20,21,18,15,12,9,6,3,0)
 tabla_DED_HOR <- table(DEDICACIÓN_ORGANIZED, HORASDOCENCIA)
 
 
+cursos_esperados <- c(2,2,2,2,2,2,2,2,1,1,0)
+tabla_curs_esp <- table(DEDICACIÓN_ORGANIZED, cursos_esperados)
+
 
 finalProduct <- planta_docente_toworkwith %>%
   mutate(
@@ -319,7 +322,9 @@ finalProduct <- planta_docente_toworkwith %>%
     TOTAL.HORAS.DOCENCIA.2023.1 = HORASDOCENCIA[match(DEDICACIÓN, DEDICACIÓN_ORGANIZED)],
     HORAS.SITUACION.ADM...CARGO.ACDM.2023.1 =ifelse(!is.na(TOTAL.HORAS.DOCENCIA.2023.1) & !is.na(SITUACION.ADM...CARGO.ACDM.2023.1),
                                                     TOTAL.HORAS.DOCENCIA.2023.1 *SITUACION.ADM...CARGO.ACDM.2023.1, NA),
-    TOTAL.HORAS.DISPONIBLE.2023.1 = coalesce(TOTAL.HORAS.DOCENCIA.2023.1, 0) - coalesce(HORAS.SITUACION.ADM...CARGO.ACDM.2023.1, 0)
+    TOTAL.HORAS.DISPONIBLE.2023.1 = coalesce(TOTAL.HORAS.DOCENCIA.2023.1, 0) - coalesce(HORAS.SITUACION.ADM...CARGO.ACDM.2023.1, 0),
+    CURSOS.ESPERADOS.2023.1 = cursos_esperados[match(DEDICACIÓN, DEDICACIÓN_ORGANIZED)],
+    DIFERENCIA.CURSOS.2023.1 = coalesce(CURSOS.ESPERADOS.2023.1,0) - coalesce(CURSOS.REGISTRADOS.2023.1,0) - coalesce(CURSOS.PEAMA.2023.1,0)
   )
 
 
