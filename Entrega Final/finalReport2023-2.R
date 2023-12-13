@@ -1,245 +1,247 @@
-setwd("C:/Users/pohlj/OneDrive/Escritorio/Job/WorkInRandRStudio/Entrega Final")
-
-library("dplyr")
-library("readxl")
-library("writexl")
-library("stringdist")
-library("openxlsx")
-library("gtools")
-
-#Raw data contains all the data related to the lectures and professors, hour per undergrad...
-
-ausentismo <- read_xlsx("AUSENTISMO A 30 NOVIEMBRE 2023.xlsx")
-cargos <- read_xlsx("CARGOS ACADEMICOS ADMINISTRATIVOS ACTUALES A 07 DIC 2023 (GENERADOS DE SARA) (1).xlsx")
-rawData <- read_xlsx("RE_HRO_GRU_PER.xlsx")
-planta_docente_toworkwith <- read_xlsx("PLANTA DE CARGOS DOCENTE A 30 NOV 2023.xlsx")
-
-# This comes after for filling the excel
-#planta_docente <- loadWorkbook("PLANTA DE CARGOS DOCENTE A 30 NOV 2023.xlsx")
-
-
-#First we are gonna deal with situaciones academicas and cargos following the rules we have established
-
-ausentismo$FECHADOC <- as.Date(ausentismo$FECHADOC, format = "%d/%m/%Y")
-ausentismo$`FECHA INICIO` <- as.Date(ausentismo$`FECHA INICIO`, format = "%d/%m/%Y")
-ausentismo$FREGRESO <- as.Date(ausentismo$FREGRESO, format = "%d/%m/%Y")
-ausentismo$`FECHA FINAL` <- as.Date(ausentismo$`FECHA FINAL`, format = "%d/%m/%Y")
-
-fechaDeCorte <- as.Date("30/11/2023", format = "%d/%m/%Y")
-fechaspreviasconsideradas <- c()
-
-for(i in 30:37){
- fechaspreviasconsideradas <- c(fechaspreviasconsideradas, as.character(fechaDeCorte - i))
-}
-
-fechaspreviasconsideradas <- as.Date(fechaspreviasconsideradas)
-
-profsConSituacion <- ausentismo %>%
-  group_by(APELLIDOSYNOMBRES) %>%
-  filter(`FECHA FINAL` == max(`FECHA FINAL`) | `FECHA FINAL` %in% fechaspreviasconsideradas)
-
-profsConSituacion <- profsConSituacion %>%
-  group_by(APELLIDOSYNOMBRES) %>%
-  filter(`FECHA FINAL` == max(`FECHA FINAL`))
-
-Nombre_Y_SituacionProf <- data.frame("APELLIDOS Y NOMBRES" = profsConSituacion$APELLIDOSYNOMBRES,
-                                  "SITUACIÓN ADMINISTRATIVA 2023 1" = profsConSituacion$NOMBREFORMATO)
-
-Nombre_Y_CargoProf <- data.frame("APELLIDOS Y NOMBRES" = cargos$`APELLIDOS Y NOMBRES`,
-                                 "CARGO ACADÉMICO ADMNISTRATIVO 2023-1" = cargos$`CARGO FUNCION`)
-
-planta_docente_toworkwith <- data.frame(planta_docente_toworkwith)
-
-planta_docente_toworkwith$CARGO.ACADÉMICO.ADMNISTRATIVO.2023.1 <- as.character(planta_docente_toworkwith$CARGO.ACADÉMICO.ADMNISTRATIVO.2023.1)
-planta_docente_toworkwith$SITUACIÓN.ADMINISTRATIVA.2023.1 <- as.character(planta_docente_toworkwith$SITUACION.ADM...CARGO.ACDM.2023.1)
-
-colnames(planta_docente_toworkwith)
-
-planta_docente_toworkwith <- rows_update(planta_docente_toworkwith, Nombre_Y_CargoProf, 
-                                         by = "APELLIDOS.Y.NOMBRES",
-                                         unmatched = "ignore")
-planta_docente_toworkwith <- rows_update(planta_docente_toworkwith, Nombre_Y_SituacionProf,
-                                         by = "APELLIDOS.Y.NOMBRES",
-                                         unmatched =  "ignore")
-
-planta_docente_toworkwith <- planta_docente_toworkwith %>%
-  mutate(
-    `SITUACION.ADM...CARGO.ACDM.2023.1` = if_else(
-      !is.na(`CARGO.ACADÉMICO.ADMNISTRATIVO.2023.1`) | !is.na(`SITUACIÓN.ADMINISTRATIVA.2023.1`),
-      1,
-      `SITUACION.ADM...CARGO.ACDM.2023.1`
+  setwd("C:/Users/pohlj/OneDrive/Escritorio/Job/WorkInRandRStudio/Entrega Final")
+  
+  library("dplyr")
+  library("readxl")
+  library("writexl")
+  library("stringdist")
+  library("openxlsx")
+  library("gtools")
+  library("matrixStats")
+  
+  #Raw data contains all the data related to the lectures and professors, hour per undergrad...
+  
+  ausentismo <- read_xlsx("AUSENTISMO A 30 NOVIEMBRE 2023.xlsx")
+  cargos <- read_xlsx("CARGOS ACADEMICOS ADMINISTRATIVOS ACTUALES A 07 DIC 2023 (GENERADOS DE SARA) (1).xlsx")
+  rawData <- read_xlsx("RE_HRO_GRU_PER.xlsx")
+  planta_docente_toworkwith <- read_xlsx("PLANTA DE CARGOS DOCENTE A 30 NOV 2023.xlsx")
+  
+  # This comes after for filling the excel
+  #planta_docente <- loadWorkbook("PLANTA DE CARGOS DOCENTE A 30 NOV 2023.xlsx")
+  
+  
+  #First we are gonna deal with situaciones academicas and cargos following the rules we have established
+  
+  ausentismo$FECHADOC <- as.Date(ausentismo$FECHADOC, format = "%d/%m/%Y")
+  ausentismo$`FECHA INICIO` <- as.Date(ausentismo$`FECHA INICIO`, format = "%d/%m/%Y")
+  ausentismo$FREGRESO <- as.Date(ausentismo$FREGRESO, format = "%d/%m/%Y")
+  ausentismo$`FECHA FINAL` <- as.Date(ausentismo$`FECHA FINAL`, format = "%d/%m/%Y")
+  
+  fechaDeCorte <- as.Date("30/11/2023", format = "%d/%m/%Y")
+  fechaspreviasconsideradas <- c()
+  
+  for(i in 30:37){
+   fechaspreviasconsideradas <- c(fechaspreviasconsideradas, as.character(fechaDeCorte - i))
+  }
+  
+  fechaspreviasconsideradas <- as.Date(fechaspreviasconsideradas)
+  
+  profsConSituacion <- ausentismo %>%
+    group_by(APELLIDOSYNOMBRES) %>%
+    filter(`FECHA FINAL` == max(`FECHA FINAL`) | `FECHA FINAL` %in% fechaspreviasconsideradas)
+  
+  profsConSituacion <- profsConSituacion %>%
+    group_by(APELLIDOSYNOMBRES) %>%
+    filter(`FECHA FINAL` == max(`FECHA FINAL`))
+  
+  Nombre_Y_SituacionProf <- data.frame("APELLIDOS Y NOMBRES" = profsConSituacion$APELLIDOSYNOMBRES,
+                                    "SITUACIÓN ADMINISTRATIVA 2023 1" = profsConSituacion$NOMBREFORMATO)
+  
+  Nombre_Y_CargoProf <- data.frame("APELLIDOS Y NOMBRES" = cargos$`APELLIDOS Y NOMBRES`,
+                                   "CARGO ACADÉMICO ADMNISTRATIVO 2023-1" = cargos$`CARGO FUNCION`)
+  
+  planta_docente_toworkwith <- data.frame(planta_docente_toworkwith)
+  
+  planta_docente_toworkwith$CARGO.ACADÉMICO.ADMNISTRATIVO.2023.1 <- as.character(planta_docente_toworkwith$CARGO.ACADÉMICO.ADMNISTRATIVO.2023.1)
+  planta_docente_toworkwith$SITUACIÓN.ADMINISTRATIVA.2023.1 <- as.character(planta_docente_toworkwith$SITUACION.ADM...CARGO.ACDM.2023.1)
+  
+  colnames(planta_docente_toworkwith)
+  
+  planta_docente_toworkwith <- rows_update(planta_docente_toworkwith, Nombre_Y_CargoProf, 
+                                           by = "APELLIDOS.Y.NOMBRES",
+                                           unmatched = "ignore")
+  planta_docente_toworkwith <- rows_update(planta_docente_toworkwith, Nombre_Y_SituacionProf,
+                                           by = "APELLIDOS.Y.NOMBRES",
+                                           unmatched =  "ignore")
+  
+  planta_docente_toworkwith <- planta_docente_toworkwith %>%
+    mutate(
+      `SITUACION.ADM...CARGO.ACDM.2023.1` = if_else(
+        !is.na(`CARGO.ACADÉMICO.ADMNISTRATIVO.2023.1`) | !is.na(`SITUACIÓN.ADMINISTRATIVA.2023.1`),
+        1,
+        `SITUACION.ADM...CARGO.ACDM.2023.1`
+      )
     )
-  )
-
-
-colnames(planta_docente_toworkwith)
-
-
-situaCargoData <- data.frame("IDENTIFICACIÓN" = planta_docente_toworkwith$IDENTIFICACION, 
-                             "CARGO ACADÉMICO ADMINISTRATIVO 2023-1" =planta_docente_toworkwith$CARGO.ACADÉMICO.ADMNISTRATIVO.2023.1,
-                             "SITUACIÓN ADMINISTRATIVA 2023-1" = planta_docente_toworkwith$SITUACIÓN.ADMINISTRATIVA.2023.1,
-                             "SITUACION.ADM...CARGO.ACDM.2023.1" = planta_docente_toworkwith$SITUACION.ADM...CARGO.ACDM.2023.1)
-
-
-
-### Now we shall deal with hours, students... per Prof. Also we have to solve the problems of
-# The names with different written style
-
-namesActivities <- unique(rawData$NOMBRE_ASS)
-
-
-exceptionCriteria <- c('Trabajo de Grado', 'Proyecto de tesis', 'Tesis', 'tesis', 'Pasantía', 'Examen', 'Especialidad', 'especialización', 'final',
-                       'proyecto de grado', 'práctica profesional', 'posgrado')
-
-
-first_Filter_criteria <- list()
-polished_filter <- list()
-
-for(i in namesActivities){
-  for(j in exceptionCriteria) {
-    if (grepl(j,i, ignore.case = TRUE)){
-      first_Filter_criteria[[length(first_Filter_criteria) + 1]] = i
+  
+  
+  colnames(planta_docente_toworkwith)
+  
+  
+  situaCargoData <- data.frame("IDENTIFICACIÓN" = planta_docente_toworkwith$IDENTIFICACION, 
+                               "CARGO ACADÉMICO ADMINISTRATIVO 2023-1" =planta_docente_toworkwith$CARGO.ACADÉMICO.ADMNISTRATIVO.2023.1,
+                               "SITUACIÓN ADMINISTRATIVA 2023-1" = planta_docente_toworkwith$SITUACIÓN.ADMINISTRATIVA.2023.1,
+                               "SITUACION.ADM...CARGO.ACDM.2023.1" = planta_docente_toworkwith$SITUACION.ADM...CARGO.ACDM.2023.1,
+                               "CURSOS.PEAMA.2023.1" = NA)
+  
+  
+  
+  ### Now we shall deal with hours, students... per Prof. Also we have to solve the problems of
+  # The names with different written style
+  
+  namesActivities <- unique(rawData$NOMBRE_ASS)
+  
+  
+  exceptionCriteria <- c('Trabajo de Grado', 'Proyecto de tesis', 'Tesis', 'tesis', 'Pasantía', 'Examen', 'Especialidad', 'especialización', 'final',
+                         'proyecto de grado', 'práctica profesional', 'posgrado')
+  
+  
+  first_Filter_criteria <- list()
+  polished_filter <- list()
+  
+  for(i in namesActivities){
+    for(j in exceptionCriteria) {
+      if (grepl(j,i, ignore.case = TRUE)){
+        first_Filter_criteria[[length(first_Filter_criteria) + 1]] = i
+      }
     }
   }
-}
-
-
-
-
-polished_filter_indices <- grep("seminario", first_Filter_criteria, ignore.case = TRUE)
-first_Filter_criteria <- first_Filter_criteria[-polished_filter_indices]
-first_Filter_criteria <-unique(first_Filter_criteria)
-
-
-particular_elements_indices <- c(5,6,19,20,53,64,65)
-
-first_Filter_criteria <- first_Filter_criteria[-particular_elements_indices]
-
-SummarizedProfInfo <- data.frame(
-  `IDENTIFICACIÓN` = c(),
-  `APELLIDOS Y NOMBRES`= c(),
-  `CURSOS PREGRADO 2023-1`= c(),
-  `HORAS PREGRADO 2023-1` = c(),
-  `ESTUDIANTES PREGRADO 2023-1` = c(),
-  `CURSOS PEAMA 2023-1` = c()
-)
-
-for (name in unique(rawData$PPAL_NOMPRS)){
-  pregradInfoPerProf <- rawData %>%
-    select(PPAL_NOMPRS, NOMBRE_ASS, `NÚMERO DE HORAS SEMANALES`, Pregrado, `NÚMERO DE INSCRITOS ACTUAL`, `NÚMERO DE HORAS SEMANALES`, PPAL_DOC_DOCENTE) %>%
-    filter(
-      PPAL_NOMPRS == name,
-      !(NOMBRE_ASS %in% first_Filter_criteria), 
-      !is.na(Pregrado),
-      !is.na(`NÚMERO DE INSCRITOS ACTUAL`),
-    ) %>%
-    mutate(
-      `NÚMERO DE HORAS SEMANALES` = if_else(
-        is.na(`NÚMERO DE HORAS SEMANALES`),
-        "2",
-        `NÚMERO DE HORAS SEMANALES`
-      )
-    )
   
-  if (nrow(pregradInfoPerProf) != 0){
-    numLecturesPregrado <- pregradInfoPerProf %>% 
-      count(Pregrado)
-    
-    newRow <- data.frame(
-      IDENTIFICACIÓN = pregradInfoPerProf$PPAL_DOC_DOCENTE[[1]],
-      `APELLIDOS Y NOMBRES`= pregradInfoPerProf$PPAL_NOMPRS[[1]],
-      `CURSOS PREGRADO 2023-1` = numLecturesPregrado$n,
-      `HORAS PREGRADO 2023-1`= sum(as.numeric(pregradInfoPerProf$`NÚMERO DE HORAS SEMANALES`)),
-      `ESTUDIANTES PREGRADO 2023-1` = sum(as.numeric(pregradInfoPerProf$`NÚMERO DE INSCRITOS ACTUAL`)),
-      `CURSOS PEAMA 2023-1` = NA
-    )
-    
-    SummarizedProfInfo <- rbind(SummarizedProfInfo, newRow)
-  }
-}
-
-SummarizedProfInfo
-write_xlsx(SummarizedProfInfo, "SummarizedProfInfo.xlsx")
-
-#Now we do the same but for the graduate info
-
-
-SummarizedProfInfoGrad <- data.frame(
-  `IDENTIFICACIÓN` = c(),
-  `APELLIDOS Y NOMBRES`= c(),
-  `CURSOS POSGRADO 2023-1`= c(),
-  `HORAS POSGRADO 2023-1` = c(),
-  `ESTUDIANTES POSGRADO 2023-1` = c(),
-  `CURSOS PEAMA 2023-1` = c()
-)
-
-
-for (name in unique(rawData$PPAL_NOMPRS)){
-  gradInfoPerProf <- rawData %>%
-    select(PPAL_NOMPRS, NOMBRE_ASS, `NÚMERO DE HORAS SEMANALES`, Pregrado ,`Postgrados y másteres`, `NÚMERO DE INSCRITOS ACTUAL`, `NÚMERO DE HORAS SEMANALES`, PPAL_DOC_DOCENTE) %>%
-    filter(
-      PPAL_NOMPRS == name,
-      is.na(Pregrado),
-      !is.na(`Postgrados y másteres`),
-      !is.na(`NÚMERO DE INSCRITOS ACTUAL`)
-    ) %>%
-    mutate(
-      `NÚMERO DE HORAS SEMANALES` = if_else(
-        is.na(`NÚMERO DE HORAS SEMANALES`),
-        "2",
-        `NÚMERO DE HORAS SEMANALES`
-      )
-    )
   
-  if (nrow(gradInfoPerProf) != 0){
+  
+  
+  polished_filter_indices <- grep("seminario", first_Filter_criteria, ignore.case = TRUE)
+  first_Filter_criteria <- first_Filter_criteria[-polished_filter_indices]
+  first_Filter_criteria <-unique(first_Filter_criteria)
+  
+  
+  particular_elements_indices <- c(5,6,19,20,53,64,65)
+  
+  first_Filter_criteria <- first_Filter_criteria[-particular_elements_indices]
+  
+  SummarizedProfInfo <- data.frame(
+    `IDENTIFICACIÓN` = c(),
+    `APELLIDOS Y NOMBRES`= c(),
+    `CURSOS PREGRADO 2023-1`= c(),
+    `HORAS PREGRADO 2023-1` = c(),
+    `ESTUDIANTES PREGRADO 2023-1` = c(),
+    `CURSOS PEAMA 2023-1` = c()
+  )
+  
+  for (name in unique(rawData$PPAL_NOMPRS)){
+    pregradInfoPerProf <- rawData %>%
+      select(PPAL_NOMPRS, NOMBRE_ASS, `NÚMERO DE HORAS SEMANALES`, Pregrado, `NÚMERO DE INSCRITOS ACTUAL`, `NÚMERO DE HORAS SEMANALES`, PPAL_DOC_DOCENTE) %>%
+      filter(
+        PPAL_NOMPRS == name,
+        !(NOMBRE_ASS %in% first_Filter_criteria), 
+        !is.na(Pregrado),
+        !is.na(`NÚMERO DE INSCRITOS ACTUAL`),
+      ) %>%
+      mutate(
+        `NÚMERO DE HORAS SEMANALES` = if_else(
+          is.na(`NÚMERO DE HORAS SEMANALES`),
+          "2",
+          `NÚMERO DE HORAS SEMANALES`
+        )
+      )
     
-    numLecturesPosgrado <- gradInfoPerProf %>%
-      count(`Postgrados y másteres`)
-    
-    newRow <- data.frame(
-      IDENTIFICACIÓN = gradInfoPerProf$PPAL_DOC_DOCENTE[[1]],
-      `APELLIDOS Y NOMBRES` = gradInfoPerProf$PPAL_NOMPRS[[1]],
-      `CURSOS POSGRADO 2023-1`= numLecturesPosgrado$n,
-      `HORAS POSGRADO 2023-1` = sum(as.numeric(gradInfoPerProf$`NÚMERO DE HORAS SEMANALES`)),
-      `ESTUDIANTES POSGRADO 2023-1` =  sum(as.numeric(gradInfoPerProf$`NÚMERO DE INSCRITOS ACTUAL`)),
-      `CURSOS PEAMA 2023-1` = NA
-    )
-    
-    SummarizedProfInfoGrad <- rbind(SummarizedProfInfoGrad, newRow)
-    
+    if (nrow(pregradInfoPerProf) != 0){
+      numLecturesPregrado <- pregradInfoPerProf %>% 
+        count(Pregrado)
+      
+      newRow <- data.frame(
+        IDENTIFICACIÓN = pregradInfoPerProf$PPAL_DOC_DOCENTE[[1]],
+        `APELLIDOS Y NOMBRES`= pregradInfoPerProf$PPAL_NOMPRS[[1]],
+        `CURSOS PREGRADO 2023-1` = numLecturesPregrado$n,
+        `HORAS PREGRADO 2023-1`= sum(as.numeric(pregradInfoPerProf$`NÚMERO DE HORAS SEMANALES`)),
+        `ESTUDIANTES PREGRADO 2023-1` = sum(as.numeric(pregradInfoPerProf$`NÚMERO DE INSCRITOS ACTUAL`)),
+        `CURSOS PEAMA 2023-1` = NA
+      )
+      
+      SummarizedProfInfo <- rbind(SummarizedProfInfo, newRow)
+    }
   }
-}
+  
+  SummarizedProfInfo
+  write_xlsx(SummarizedProfInfo, "SummarizedProfInfo.xlsx")
+  
+  #Now we do the same but for the graduate info
+  
+  
+  SummarizedProfInfoGrad <- data.frame(
+    `IDENTIFICACIÓN` = c(),
+    `APELLIDOS Y NOMBRES`= c(),
+    `CURSOS POSGRADO 2023-1`= c(),
+    `HORAS POSGRADO 2023-1` = c(),
+    `ESTUDIANTES POSGRADO 2023-1` = c(),
+    `CURSOS PEAMA 2023-1` = c()
+  )
+  
+  
+  for (name in unique(rawData$PPAL_NOMPRS)){
+    gradInfoPerProf <- rawData %>%
+      select(PPAL_NOMPRS, NOMBRE_ASS, `NÚMERO DE HORAS SEMANALES`, Pregrado ,`Postgrados y másteres`, `NÚMERO DE INSCRITOS ACTUAL`, `NÚMERO DE HORAS SEMANALES`, PPAL_DOC_DOCENTE) %>%
+      filter(
+        PPAL_NOMPRS == name,
+        is.na(Pregrado),
+        !is.na(`Postgrados y másteres`),
+        !is.na(`NÚMERO DE INSCRITOS ACTUAL`)
+      ) %>%
+      mutate(
+        `NÚMERO DE HORAS SEMANALES` = if_else(
+          is.na(`NÚMERO DE HORAS SEMANALES`),
+          "2",
+          `NÚMERO DE HORAS SEMANALES`
+        )
+      )
+    
+    if (nrow(gradInfoPerProf) != 0){
+      
+      numLecturesPosgrado <- gradInfoPerProf %>%
+        count(`Postgrados y másteres`)
+      
+      newRow <- data.frame(
+        IDENTIFICACIÓN = gradInfoPerProf$PPAL_DOC_DOCENTE[[1]],
+        `APELLIDOS Y NOMBRES` = gradInfoPerProf$PPAL_NOMPRS[[1]],
+        `CURSOS POSGRADO 2023-1`= numLecturesPosgrado$n,
+        `HORAS POSGRADO 2023-1` = sum(as.numeric(gradInfoPerProf$`NÚMERO DE HORAS SEMANALES`)),
+        `ESTUDIANTES POSGRADO 2023-1` =  sum(as.numeric(gradInfoPerProf$`NÚMERO DE INSCRITOS ACTUAL`)),
+        `CURSOS PEAMA 2023-1` = NA
+      )
+      
+      SummarizedProfInfoGrad <- rbind(SummarizedProfInfoGrad, newRow)
+      
+    }
+  }
+  
+  
+  totalData <- merge(SummarizedProfInfo, SummarizedProfInfoGrad, by = c("APELLIDOS.Y.NOMBRES", "IDENTIFICACIÓN", "CURSOS.PEAMA.2023.1"), all.x = TRUE, all.y = TRUE )
+  colnames(totalData)
+  
+  write_xlsx(totalData, "test2.xlsx")
+  
+  
+  ## The Peama part
+  
+  consolidado <- read_xlsx("Consolidado.xlsx")
+  
+  for (value in unique(rawData$PPAL_NOMPRS)){
+    peamaPerProf <- consolidado %>%
+      select(`CURSO PEAMA`, DOC_DOCENTE) %>%
+      filter( !is.na(`CURSO PEAMA`)) %>%
+      group_by(DOC_DOCENTE) %>%
+      summarise(PEAMA_count = sum(`CURSO PEAMA` == "PEAMA"))
+  }
+  
+  
+  peamaPerProf <- data.frame("CURSOS.PEAMA.2023.1" = peamaPerProf$PEAMA_count, "IDENTIFICACIÓN" = peamaPerProf$DOC_DOCENTE )
+  
+
+  addPeama <- merge(totalData, peamaPerProf, by = c("IDENTIFICACIÓN", "CURSOS.PEAMA.2023.1"), all.x = TRUE, all.y = TRUE)
 
 
-totalData <- merge(SummarizedProfInfo, SummarizedProfInfoGrad, by = c("APELLIDOS.Y.NOMBRES", "IDENTIFICACIÓN", "CURSOS.PEAMA.2023.1"), all.x = TRUE, all.y = TRUE )
-colnames(totalData)
-
-write_xlsx(totalData, "test2.xlsx")
+  addSituaCargo <- merge(situaCargoData, addPeama, by = c("IDENTIFICACIÓN", "CURSOS.PEAMA.2023.1"), all.y = TRUE)
 
 
-## The Peama part
-
-consolidado <- read_xlsx("Consolidado.xlsx")
-
-for (value in unique(rawData$PPAL_NOMPRS)){
-  peamaPerProf <- consolidado %>%
-    select(DOCENTE, `CURSO PEAMA`) %>%
-    filter( !is.na(`CURSO PEAMA`)) %>%
-    group_by(DOCENTE) %>%
-    summarise(PEAMA_count = sum(`CURSO PEAMA` == "PEAMA"))
-}
-
-
-peamaPerProf <- data.frame("APELLIDOS Y NOMBRES" = peamaPerProf$DOCENTE, "CURSOS PEAMA 2023-1" = peamaPerProf$PEAMA_count )
-
-addPeama <- merge(totalData, peamaPerProf, by = c("APELLIDOS.Y.NOMBRES", "CURSOS.PEAMA.2023.1"), all.x = TRUE, all.y = TRUE)
-
-addSituaCargo <- merge(addPeama, situaCargoData, by = "IDENTIFICACIÓN")
-
-
-write_xlsx(addSituaCargo, "test5.xlsx")
-
-
+  
 ###############################################################################
 ## Now comes the tricky part, relating the names with the different writting
 
@@ -283,7 +285,6 @@ for(name in namesPlanta){
 }
 
 
-##############################################################################3
 
 
 compendium_match_indices[["NamePlantaIndex"]] <- 1:length(namesPlanta)
@@ -324,29 +325,85 @@ planta_docente_toworkwith <- merge(planta_docente_toworkwith, finalProduct,
 write_xlsx(planta_docente_toworkwith, "test3.xlsx")
 
 
+##############################################################################
+#######################################################
 
-#######################################################3
-
-totalData
 
 ids_planta_docente <- planta_docente_toworkwith$IDENTIFICACION
-
-names_raw_data <- unique(rawData$PPAL_NOMPRS)
-ids_names_raw_data <- match(names_raw_data, )
-
-rawData_Ids <- rawData %>%
-  select(PPAL_NOMPRS, PPAL_DOC_DOCENTE) %>% 
-  filter(PPAL_NOMPRS %in% names_raw_data)
-
-rawData_Ids$PPAL_DOC_DOCENTE
-
-associated_index <- match(ids_planta_docente, rawData_Ids$PPAL_DOC_DOCENTE)
-
-associated_index
-newProduct <- totalData[associated_index, ]
+index_ids_plan_docente <- match(ids_planta_docente, addSituaCargo$IDENTIFICACIÓN)
+notInDataProfPlantaDocente <- c()
 
 
-write_xlsx(newProduct, "NewProduct.xlsx")
+for (i in 1:length(index_ids_plan_docente)){
+  if (is.na(index_ids_plan_docente[i])){
+    notInDataProfPlantaDocente <- c(notInDataProfPlantaDocente, i)
+  }
+}
+
+
+
+finalDataFrame <- data.frame()
+
+
+for (i in index_ids_plan_docente){
+  finalDataFrame <- rbind(finalDataFrame, addSituaCargo[i, ])
+}
+
+
+
+finalDataFrame$IDENTIFICACION <- finalDataFrame$IDENTIFICACIÓN
+finalDataFrame$IDENTIFICACIÓN <- NULL
+
+finalDataFrame$CARGO.ACADÉMICO.ADMNISTRATIVO.2023.1 <- finalDataFrame$CARGO.ACADÉMICO.ADMINISTRATIVO.2023.1
+finalDataFrame$CARGO.ACADÉMICO.ADMINISTRATIVO.2023.1 <- NULL
+
+finalDataFrame$APELLIDOS.Y.NOMBRES <- NULL
+
+common_columns <- intersect(colnames(planta_docente_toworkwith), colnames(finalDataFrame))
+common_columns <- common_columns[-1]
+common_columns
+
+na.omit(planta_docente_toworkwith["CURSOS.PEAMA.2023.1"])
+
+for(col in common_columns){
+  planta_docente_toworkwith[[col]] <- finalDataFrame[[col]]
+}
+
+
+
+
+DEDIN <- unique(finalProduct$DEDICACIÓN)
+DEDICACIÓN_ORGANIZED <- c("DOCENTE DEDICAC. EXCLUSIVA", 
+                          "DOCENTE TIEMPO COMPLETO",
+                          "DOCENTE MEDIO TIEMPO",
+                          "DOCENTE CATEDRA 0,7",
+                          "DOCENTE CATEDRA 0,6",
+                          "DOCENTE CATEDRA 0,5",
+                          "DOCENTE CATEDRA 0,4",
+                          "DOCENTE CATEDRA 0,3",
+                          "DOCENTE CATEDRA 0,2",
+                          "DOCENTE CATEDRA 0,1",
+                          "DOCENTE CATEDRA 0,0")
+
+
+HORASDOCENCIA <- c(44,40,20,21,18,15,12,9,6,3,0)
+
+tabla_DED_HOR <- table(DEDICACIÓN_ORGANIZED, HORASDOCENCIA)
+
+
+
+finalProduct <- planta_docente_toworkwith %>%
+  mutate(
+    CURSOS.REGISTRADOS.2023.1 = rowSums(select(., CURSOS.PREGRADO.2023.1, CURSOS.POSGRADO.2023.1), na.rm = TRUE),
+    HORAS.REGISTRADAS.2023.1 = rowSums(select(., HORAS.PREGRADO.2023.1, HORAS.POSGRADO.2023.1), na.rm = TRUE),
+    TOTAL.HORAS.DOCENCIA.2023.1 = HORASDOCENCIA[match(DEDICACIÓN, DEDICACIÓN_ORGANIZED)],
+    HORAS.SITUACION.ADM...CARGO.ACDM.2023.1 =ifelse(!is.na(TOTAL.HORAS.DOCENCIA.2023.1) & !is.na(SITUACION.ADM...CARGO.ACDM.2023.1),
+                                                    TOTAL.HORAS.DOCENCIA.2023.1 *SITUACION.ADM...CARGO.ACDM.2023.1, NA),
+    TOTAL.HORAS.DISPONIBLE.2023.1 = coalesce(TOTAL.HORAS.DOCENCIA.2023.1, 0) - coalesce(HORAS.SITUACION.ADM...CARGO.ACDM.2023.1, 0)
+  )
+
+
+write_xlsx(finalProduct, "finalProduct.xlsx")
 
 names_raw_data[590]
 
