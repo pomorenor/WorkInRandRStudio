@@ -1,6 +1,5 @@
 setwd("C:/Users/pohlj/OneDrive/Escritorio/Job/WorkInRandRStudio/Entrega Final")
 
-
 library("dplyr")
 library("readxl")
 library("writexl")
@@ -73,12 +72,12 @@ planta_docente_toworkwith <- planta_docente_toworkwith %>%
   )
 
 
-
-
-write_xlsx(planta_docente_toworkwith, "Nomsit.xlsx")
-
 colnames(planta_docente_toworkwith)
 
+
+situaCargoData <- data.frame("IDENTIFICACIÓN" = planta_docente_toworkwith$IDENTIFICACION, 
+                             "CARGO ACADÉMICO ADMINISTRATIVO 2023-1" =planta_docente_toworkwith$CARGO.ACADÉMICO.ADMNISTRATIVO.2023.1,
+                             "SITUACIÓN ADMINISTRATIVA 2023-1" = planta_docente_toworkwith$SITUACIÓN.ADMINISTRATIVA.2023.1)
 
 
 
@@ -116,15 +115,17 @@ particular_elements_indices <- c(5,6,19,20,53,64,65)
 first_Filter_criteria <- first_Filter_criteria[-particular_elements_indices]
 
 SummarizedProfInfo <- data.frame(
+  `IDENTIFICACIÓN` = c(),
   `APELLIDOS Y NOMBRES`= c(),
   `CURSOS PREGRADO 2023-1`= c(),
   `HORAS PREGRADO 2023-1` = c(),
-  `ESTUDIANTES PREGRADO 2023-1` = c()
+  `ESTUDIANTES PREGRADO 2023-1` = c(),
+  `CURSOS PEAMA 2023-1` = c()
 )
 
 for (name in unique(rawData$PPAL_NOMPRS)){
   pregradInfoPerProf <- rawData %>%
-    select(PPAL_NOMPRS, NOMBRE_ASS, `NÚMERO DE HORAS SEMANALES`, Pregrado, `NÚMERO DE INSCRITOS ACTUAL`, `NÚMERO DE HORAS SEMANALES`) %>%
+    select(PPAL_NOMPRS, NOMBRE_ASS, `NÚMERO DE HORAS SEMANALES`, Pregrado, `NÚMERO DE INSCRITOS ACTUAL`, `NÚMERO DE HORAS SEMANALES`, PPAL_DOC_DOCENTE) %>%
     filter(
       PPAL_NOMPRS == name,
       !(NOMBRE_ASS %in% first_Filter_criteria), 
@@ -144,31 +145,37 @@ for (name in unique(rawData$PPAL_NOMPRS)){
       count(Pregrado)
     
     newRow <- data.frame(
+      IDENTIFICACIÓN = pregradInfoPerProf$PPAL_DOC_DOCENTE[[1]],
       `APELLIDOS Y NOMBRES`= pregradInfoPerProf$PPAL_NOMPRS[[1]],
-      `CURSOS PREGRADO 2023-1` = numLecturesPregrado,
+      `CURSOS PREGRADO 2023-1` = numLecturesPregrado$n,
       `HORAS PREGRADO 2023-1`= sum(as.numeric(pregradInfoPerProf$`NÚMERO DE HORAS SEMANALES`)),
-      `ESTUDIANTES PREGRADO 2023-1` = sum(as.numeric(pregradInfoPerProf$`NÚMERO DE INSCRITOS ACTUAL`))
+      `ESTUDIANTES PREGRADO 2023-1` = sum(as.numeric(pregradInfoPerProf$`NÚMERO DE INSCRITOS ACTUAL`)),
+      `CURSOS PEAMA 2023-1` = NA
     )
     
     SummarizedProfInfo <- rbind(SummarizedProfInfo, newRow)
   }
 }
 
+SummarizedProfInfo
+write_xlsx(SummarizedProfInfo, "SummarizedProfInfo.xlsx")
 
 #Now we do the same but for the graduate info
 
 
 SummarizedProfInfoGrad <- data.frame(
+  `IDENTIFICACIÓN` = c(),
   `APELLIDOS Y NOMBRES`= c(),
   `CURSOS POSGRADO 2023-1`= c(),
   `HORAS POSGRADO 2023-1` = c(),
-  `ESTUDIANTES POSGRADO 2023-1` = c()
+  `ESTUDIANTES POSGRADO 2023-1` = c(),
+  `CURSOS PEAMA 2023-1` = c()
 )
 
 
 for (name in unique(rawData$PPAL_NOMPRS)){
   gradInfoPerProf <- rawData %>%
-    select(PPAL_NOMPRS, NOMBRE_ASS, `NÚMERO DE HORAS SEMANALES`, Pregrado ,`Postgrados y másteres`, `NÚMERO DE INSCRITOS ACTUAL`, `NÚMERO DE HORAS SEMANALES`) %>%
+    select(PPAL_NOMPRS, NOMBRE_ASS, `NÚMERO DE HORAS SEMANALES`, Pregrado ,`Postgrados y másteres`, `NÚMERO DE INSCRITOS ACTUAL`, `NÚMERO DE HORAS SEMANALES`, PPAL_DOC_DOCENTE) %>%
     filter(
       PPAL_NOMPRS == name,
       is.na(Pregrado),
@@ -189,10 +196,12 @@ for (name in unique(rawData$PPAL_NOMPRS)){
       count(`Postgrados y másteres`)
     
     newRow <- data.frame(
+      IDENTIFICACIÓN = gradInfoPerProf$PPAL_DOC_DOCENTE[[1]],
       `APELLIDOS Y NOMBRES` = gradInfoPerProf$PPAL_NOMPRS[[1]],
-      `CURSOS POSGRADO 2023-1`= numLecturesPosgrado,
+      `CURSOS POSGRADO 2023-1`= numLecturesPosgrado$n,
       `HORAS POSGRADO 2023-1` = sum(as.numeric(gradInfoPerProf$`NÚMERO DE HORAS SEMANALES`)),
-      `ESTUDIANTES POSGRADO 2023-1` =  sum(as.numeric(gradInfoPerProf$`NÚMERO DE INSCRITOS ACTUAL`))
+      `ESTUDIANTES POSGRADO 2023-1` =  sum(as.numeric(gradInfoPerProf$`NÚMERO DE INSCRITOS ACTUAL`)),
+      `CURSOS PEAMA 2023-1` = NA
     )
     
     SummarizedProfInfoGrad <- rbind(SummarizedProfInfoGrad, newRow)
@@ -201,15 +210,36 @@ for (name in unique(rawData$PPAL_NOMPRS)){
 }
 
 
-SummarizedProfInfoGrad
+totalData <- merge(SummarizedProfInfo, SummarizedProfInfoGrad, by = c("APELLIDOS.Y.NOMBRES", "IDENTIFICACIÓN", "CURSOS.PEAMA.2023.1"), all.x = TRUE, all.y = TRUE )
+colnames(totalData)
 
-#nombresProfs_rawData <- tolower(unique(rawData$PPAL_NOMPRS))
-#nombresProfs_plantaDecargos <- tolower(unique(planta_docente_toworkwith$APELLIDOS.Y.NOMBRES))
-
-
-totalData <- merge(SummarizedProfInfo, SummarizedProfInfoGrad, by = "APELLIDOS.Y.NOMBRES" )
+write_xlsx(totalData, "test2.xlsx")
 
 
+## The Peama part
+
+consolidado <- read_xlsx("Consolidado.xlsx")
+
+for (value in unique(rawData$PPAL_NOMPRS)){
+  peamaPerProf <- consolidado %>%
+    select(DOCENTE, `CURSO PEAMA`) %>%
+    filter( !is.na(`CURSO PEAMA`)) %>%
+    group_by(DOCENTE) %>%
+    summarise(PEAMA_count = sum(`CURSO PEAMA` == "PEAMA"))
+}
+
+
+peamaPerProf <- data.frame("APELLIDOS Y NOMBRES" = peamaPerProf$DOCENTE, "CURSOS PEAMA 2023-1" = peamaPerProf$PEAMA_count )
+
+addPeama <- merge(totalData, peamaPerProf, by = c("APELLIDOS.Y.NOMBRES", "CURSOS.PEAMA.2023.1"), all.x = TRUE, all.y = TRUE)
+
+addSituaCargo <- merge(addPeama, situaCargoData, by = "IDENTIFICACIÓN")
+
+
+write_xlsx(newnewDATA, "test5.xlsx")
+
+
+###############################################################################
 ## Now comes the tricky part, relating the names with the different writting
 
 namesPlanta <- tolower(planta_docente_toworkwith$APELLIDOS.Y.NOMBRES)
@@ -248,19 +278,78 @@ for(name in namesPlanta){
     }
   
   best_match_data <- match_indices[which.min(match_indices$Distance), ]
-  #print(best_match_data)
   compendium_match_indices <- rbind(compendium_match_indices, best_match_data )
 }
 
 
+##############################################################################3
 
 
-write_xlsx(compendium_match_indices, "NamesPlaneAndRaw.xlsx")
+compendium_match_indices[["NamePlantaIndex"]] <- 1:length(namesPlanta)
 
+
+matching_errors <- compendium_match_indices %>%
+  select(NamePlanta, NameRaw, Distance, Match, RawIndex, NamePlantaIndex) %>%
+  filter(Distance != 0)
   
-# We will try doing it in another way
+
+
+#write_xlsx(matching_errors, "ErrorsInMatching.xlsx")
+#write_xlsx(compendium_match_indices, "NamesPlaneAndRaw.xlsx")
+#write_xlsx(totalData, "InformacionCompleta.xlsx")
+  
+notFoundProfessor <- read_xlsx("ErrorsInMatching.xlsx")
+
+
+nums <- c(compendium_match_indices$RawIndex)
+
+realnames <- unique(rawData$PPAL_NOMPRS)[compendium_match_indices$RawIndex]
+realIndices <- match(realnames,totalData$APELLIDOS.Y.NOMBRES)
 
 
 
 
+finalProduct <- totalData[realIndices, ]
+finalProduct$APELLIDOS.Y.NOMBRES <- planta_docente_toworkwith$APELLIDOS.Y.NOMBRES
 
+colnames(finalProduct)
+colnames(planta_docente_toworkwith)
+
+planta_docente_toworkwith <- merge(planta_docente_toworkwith, finalProduct, 
+                                         by = "APELLIDOS.Y.NOMBRES",
+                                         all.x = TRUE, 
+                                         all.y = TRUE) 
+
+write_xlsx(planta_docente_toworkwith, "test3.xlsx")
+
+
+
+#######################################################3
+
+totalData
+
+ids_planta_docente <- planta_docente_toworkwith$IDENTIFICACION
+
+names_raw_data <- unique(rawData$PPAL_NOMPRS)
+ids_names_raw_data <- match(names_raw_data, )
+
+rawData_Ids <- rawData %>%
+  select(PPAL_NOMPRS, PPAL_DOC_DOCENTE) %>% 
+  filter(PPAL_NOMPRS %in% names_raw_data)
+
+rawData_Ids$PPAL_DOC_DOCENTE
+
+associated_index <- match(ids_planta_docente, rawData_Ids$PPAL_DOC_DOCENTE)
+
+associated_index
+newProduct <- totalData[associated_index, ]
+
+
+write_xlsx(newProduct, "NewProduct.xlsx")
+
+names_raw_data[590]
+
+ids_planta_docente[1]
+rawData_Ids
+match(35457094, totalData$IDENTIFICACIÓN   )
+totalData
