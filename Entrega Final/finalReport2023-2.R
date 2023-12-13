@@ -4,7 +4,6 @@
   library("readxl")
   library("writexl")
   library("stringdist")
-  library("openxlsx")
   library("gtools")
   library("matrixStats")
   
@@ -14,7 +13,8 @@
   cargos <- read_xlsx("CARGOS ACADEMICOS ADMINISTRATIVOS ACTUALES A 07 DIC 2023 (GENERADOS DE SARA) (1).xlsx")
   rawData <- read_xlsx("RE_HRO_GRU_PER.xlsx")
   planta_docente_toworkwith <- read_xlsx("PLANTA DE CARGOS DOCENTE A 30 NOV 2023.xlsx")
-  
+  copy_of_planta_docente <- read_xlsx("PLANTA DE CARGOS DOCENTE A 30 NOV 2023.xlsx")
+
   # This comes after for filling the excel
   #planta_docente <- loadWorkbook("PLANTA DE CARGOS DOCENTE A 30 NOV 2023.xlsx")
   
@@ -145,7 +145,7 @@
     
     if (nrow(pregradInfoPerProf) != 0){
       numLecturesPregrado <- pregradInfoPerProf %>% 
-        count(Pregrado)
+        dplyr::count(Pregrado)
       
       newRow <- data.frame(
         IDENTIFICACIÓN = pregradInfoPerProf$PPAL_DOC_DOCENTE[[1]],
@@ -161,8 +161,7 @@
   }
   
   SummarizedProfInfo
-  write_xlsx(SummarizedProfInfo, "SummarizedProfInfo.xlsx")
-  
+
   #Now we do the same but for the graduate info
   
   
@@ -181,6 +180,7 @@
       select(PPAL_NOMPRS, NOMBRE_ASS, `NÚMERO DE HORAS SEMANALES`, Pregrado ,`Postgrados y másteres`, `NÚMERO DE INSCRITOS ACTUAL`, `NÚMERO DE HORAS SEMANALES`, PPAL_DOC_DOCENTE) %>%
       filter(
         PPAL_NOMPRS == name,
+        !(NOMBRE_ASS %in% first_Filter_criteria), 
         is.na(Pregrado),
         !is.na(`Postgrados y másteres`),
         !is.na(`NÚMERO DE INSCRITOS ACTUAL`)
@@ -196,7 +196,7 @@
     if (nrow(gradInfoPerProf) != 0){
       
       numLecturesPosgrado <- gradInfoPerProf %>%
-        count(`Postgrados y másteres`)
+        dplyr::count(`Postgrados y másteres`)
       
       newRow <- data.frame(
         IDENTIFICACIÓN = gradInfoPerProf$PPAL_DOC_DOCENTE[[1]],
@@ -244,85 +244,6 @@
   
 ###############################################################################
 ## Now comes the tricky part, relating the names with the different writting
-
-namesPlanta <- tolower(planta_docente_toworkwith$APELLIDOS.Y.NOMBRES)
-namesRaw <- tolower(unique(rawData$PPAL_NOMPRS))
-
-
-
-compendium_match_indices <- data.frame(NamePlanta = c(),
-                            NameRaw = c(),
-                            Distance = c(),
-                            Match = c(),
-                            RawIndex = c()
-                            )
-
-
-
-for(name in namesPlanta){
-  
-  match_indices <- data.frame(NamePlanta = c(),
-                              NameRaw = c(),
-                              Distance = c(),
-                              Match = c(),
-                              RawIndex = c()
-                             )
-  
-  for(prenom in namesRaw){
-    match <- stringdist::amatch(name, prenom, method = "jaccard")
-    dist <- stringdist(name, prenom, method = "jaccard")
-    raw_index <- which(namesRaw == prenom)
-    if(length(raw_index) == 0){
-      raw_index <- NA
-    }
-    new_row <- data.frame(NamePlanta = name, NameRaw = prenom, Distance = dist, Match = match,
-                          RawIndex = raw_index)
-    match_indices <- rbind(match_indices, new_row)
-    }
-  
-  best_match_data <- match_indices[which.min(match_indices$Distance), ]
-  compendium_match_indices <- rbind(compendium_match_indices, best_match_data )
-}
-
-
-
-
-compendium_match_indices[["NamePlantaIndex"]] <- 1:length(namesPlanta)
-
-
-matching_errors <- compendium_match_indices %>%
-  select(NamePlanta, NameRaw, Distance, Match, RawIndex, NamePlantaIndex) %>%
-  filter(Distance != 0)
-  
-
-
-#write_xlsx(matching_errors, "ErrorsInMatching.xlsx")
-#write_xlsx(compendium_match_indices, "NamesPlaneAndRaw.xlsx")
-#write_xlsx(totalData, "InformacionCompleta.xlsx")
-  
-notFoundProfessor <- read_xlsx("ErrorsInMatching.xlsx")
-
-
-nums <- c(compendium_match_indices$RawIndex)
-
-realnames <- unique(rawData$PPAL_NOMPRS)[compendium_match_indices$RawIndex]
-realIndices <- match(realnames,totalData$APELLIDOS.Y.NOMBRES)
-
-
-
-
-finalProduct <- totalData[realIndices, ]
-finalProduct$APELLIDOS.Y.NOMBRES <- planta_docente_toworkwith$APELLIDOS.Y.NOMBRES
-
-colnames(finalProduct)
-colnames(planta_docente_toworkwith)
-
-planta_docente_toworkwith <- merge(planta_docente_toworkwith, finalProduct, 
-                                         by = "APELLIDOS.Y.NOMBRES",
-                                         all.x = TRUE, 
-                                         all.y = TRUE) 
-
-write_xlsx(planta_docente_toworkwith, "test3.xlsx")
 
 
 ##############################################################################
@@ -372,7 +293,6 @@ for(col in common_columns){
 
 
 
-DEDIN <- unique(finalProduct$DEDICACIÓN)
 DEDICACIÓN_ORGANIZED <- c("DOCENTE DEDICAC. EXCLUSIVA", 
                           "DOCENTE TIEMPO COMPLETO",
                           "DOCENTE MEDIO TIEMPO",
@@ -403,11 +323,10 @@ finalProduct <- planta_docente_toworkwith %>%
   )
 
 
-write_xlsx(finalProduct, "finalProduct.xlsx")
+colnames(finalProduct) <- colnames(copy_of_planta_docente)
 
-names_raw_data[590]
+write_xlsx(finalProduct, "ProductoFinal.xlsx")
 
-ids_planta_docente[1]
-rawData_Ids
-match(35457094, totalData$IDENTIFICACIÓN   )
-totalData
+length(unique(finalProduct$IDENTIFICACION))
+length(finalProduct$IDENTIFICACION)
+
