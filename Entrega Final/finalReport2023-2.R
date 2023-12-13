@@ -77,7 +77,8 @@ colnames(planta_docente_toworkwith)
 
 situaCargoData <- data.frame("IDENTIFICACIÓN" = planta_docente_toworkwith$IDENTIFICACION, 
                              "CARGO ACADÉMICO ADMINISTRATIVO 2023-1" =planta_docente_toworkwith$CARGO.ACADÉMICO.ADMNISTRATIVO.2023.1,
-                             "SITUACIÓN ADMINISTRATIVA 2023-1" = planta_docente_toworkwith$SITUACIÓN.ADMINISTRATIVA.2023.1)
+                             "SITUACIÓN ADMINISTRATIVA 2023-1" = planta_docente_toworkwith$SITUACIÓN.ADMINISTRATIVA.2023.1,
+                             "SITUACION.ADM...CARGO.ACDM.2023.1" = planta_docente_toworkwith$SITUACION.ADM...CARGO.ACDM.2023.1)
 
 
 
@@ -236,7 +237,7 @@ addPeama <- merge(totalData, peamaPerProf, by = c("APELLIDOS.Y.NOMBRES", "CURSOS
 addSituaCargo <- merge(addPeama, situaCargoData, by = "IDENTIFICACIÓN")
 
 
-write_xlsx(newnewDATA, "test5.xlsx")
+write_xlsx(addSituaCargo, "test5.xlsx")
 
 
 ###############################################################################
