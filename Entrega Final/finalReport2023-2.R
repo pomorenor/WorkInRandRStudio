@@ -330,8 +330,51 @@ finalProduct <- planta_docente_toworkwith %>%
 
 colnames(finalProduct) <- colnames(copy_of_planta_docente)
 
-write_xlsx(finalProduct, "ProductoFinal.xlsx")
 
-length(unique(finalProduct$IDENTIFICACION))
-length(finalProduct$IDENTIFICACION)
+length(colnames(finalProduct))
+
+noInfoProfs <- finalProduct %>%
+  filter(is.na(`CURSOS PREGRADO 2023-1`),	
+         is.na(`HORAS PREGRADO 2023-1`),	
+         is.na(`ESTUDIANTES PREGRADO 2023-1`),	
+         is.na(`CURSOS POSGRADO 2023-1`),	
+         is.na(`HORAS POSGRADO 2023-1`),
+         is.na(`ESTUDIANTES POSGRADO 2023-1`))
+
+
+
+infoProfsNotFound <- rawData[match(noInfoProfs$IDENTIFICACION, rawData$PPAL_DOC_DOCENTE),]
+
+gradInfoProfsNotFound <- infoProfsNotFound %>%
+  filter( !is.na(`Postgrados y másteres`),
+          is.na(Pregrado),
+          NOMBRE_ASS %in% first_Filter_criteria ) %>%
+  select(PPAL_DOC_DOCENTE, NOMBRE_ASS ) 
+  
+
+finalProduct <- finalProduct %>%
+  mutate(`OBSERVACION 2023-1` = if_else(IDENTIFICACION %in% gradInfoProfsNotFound$PPAL_DOC_DOCENTE,
+                                        "Actividad asociada al filtro",
+                                        `OBSERVACION 2023-1`)
+         )
+
+
+restOfNotFoundInfoProf <- noInfoProfs %>%
+  filter(!(IDENTIFICACION %in% gradInfoProfsNotFound$PPAL_DOC_DOCENTE))
+
+
+finalProduct <- finalProduct %>%
+  mutate(`OBSERVACION 2023-1` = if_else(IDENTIFICACION %in% restOfNotFoundInfoProf$IDENTIFICACION & is.na(`CURSOS PEAMA 2023-1`),
+                                        "No reportado en base de datos",
+                                        `OBSERVACION 2023-1`)
+  ) 
+
+
+write_xlsx(finalProduct, "FormatoConObservaciones.xlsx")
+
+colnames(infoProfsNotFound)
+rawData$PPAL_NOMPRS[8096]
+colnames(finalProduct)
+
+
 
