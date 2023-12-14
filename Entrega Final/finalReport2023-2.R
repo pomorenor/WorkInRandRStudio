@@ -1,4 +1,5 @@
-  setwd("C:/Users/pohlj/OneDrive/Escritorio/Job/WorkInRandRStudio/Entrega Final")
+  setwd("~/Escritorio/WorkInRandRStudio/Entrega Final")
+  
   
   library("dplyr")
   library("readxl")
@@ -175,6 +176,8 @@
   )
   
   
+  
+
   for (name in unique(rawData$PPAL_NOMPRS)){
     gradInfoPerProf <- rawData %>%
       select(PPAL_NOMPRS, NOMBRE_ASS, `NÚMERO DE HORAS SEMANALES`, Pregrado ,`Postgrados y másteres`, `NÚMERO DE INSCRITOS ACTUAL`, `NÚMERO DE HORAS SEMANALES`, PPAL_DOC_DOCENTE) %>%
@@ -218,6 +221,11 @@
   
   write_xlsx(totalData, "test2.xlsx")
   
+  colnames(rawData)
+  
+  
+  
+  
   
   ## The Peama part
   
@@ -231,15 +239,19 @@
       summarise(PEAMA_count = sum(`CURSO PEAMA` == "PEAMA"))
   }
   
+  write_xlsx(totalData, "DATAPREPEAMA.xlsx")
+  
   
   peamaPerProf <- data.frame("CURSOS.PEAMA.2023.1" = peamaPerProf$PEAMA_count, "IDENTIFICACIÓN" = peamaPerProf$DOC_DOCENTE )
   
+  totalData$CURSOS.PEAMA.2023.1 <- as.integer(totalData$CURSOS.PEAMA.2023.1)
+  addPeama <- rows_update(totalData, peamaPerProf, by = "IDENTIFICACIÓN", unmatched = "ignore")
 
-  addPeama <- merge(totalData, peamaPerProf, by = c("IDENTIFICACIÓN", "CURSOS.PEAMA.2023.1"), all.x = TRUE, all.y = TRUE)
 
+  
+  addSituaCargo <- merge(situaCargoData, addPeama, by = "IDENTIFICACIÓN", all.y = TRUE)
 
-  addSituaCargo <- merge(situaCargoData, addPeama, by = c("IDENTIFICACIÓN", "CURSOS.PEAMA.2023.1"), all.y = TRUE)
-
+  write_xlsx(addSituaCargo, "addSituaCargo.xlsx")
 
   
 ###############################################################################
