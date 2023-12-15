@@ -117,7 +117,9 @@ first_Filter_criteria <-unique(first_Filter_criteria)
 particular_elements_indices <- c(5,6,19,20,53,64,65)
   
 first_Filter_criteria <- first_Filter_criteria[-particular_elements_indices]
-  
+first_Filter_criteria <- c(first_Filter_criteria, "Tesis de Maestría")
+
+
 SummarizedProfInfo <- data.frame(
   `IDENTIFICACIÓN` = c(),
   `APELLIDOS Y NOMBRES`= c(),
@@ -186,7 +188,7 @@ for (name in unique(rawData$PPAL_NOMPRS)){
       !(NOMBRE_ASS %in% first_Filter_criteria), 
       is.na(Pregrado),
       !is.na(`Postgrados y másteres`),
-     # !is.na(`NÚMERO DE INSCRITOS ACTUAL`)
+      !is.na(`NÚMERO DE INSCRITOS ACTUAL`)
     ) %>%
     mutate(
       `NÚMERO DE HORAS SEMANALES` = if_else(
@@ -364,10 +366,20 @@ gradInfoProfsNotFound <- infoProfsNotFound %>%
   select(PPAL_DOC_DOCENTE, NOMBRE_ASS ) 
   
 
+
+materiasPosgradoProfNotFound <- rawData %>%
+  filter(PPAL_DOC_DOCENTE %in% gradInfoProfsNotFound$PPAL_DOC_DOCENTE) %>%
+  select(PPAL_DOC_DOCENTE,NOMBRE_ASS) %>%
+  group_by(PPAL_DOC_DOCENTE) %>%
+  reframe(Asignaturas = toString(NOMBRE_ASS))
+
+ 
+
+
 finalProduct <- finalProduct %>%
   mutate(`OBSERVACION 2023-1` = if_else(IDENTIFICACION %in% gradInfoProfsNotFound$PPAL_DOC_DOCENTE,
-                                        "Actividad asociada al filtro",
-                                        `OBSERVACION 2023-1`)
+                                        materiasPosgradoProfNotFound$Asignaturas[match(IDENTIFICACION,materiasPosgradoProfNotFound$PPAL_DOC_DOCENTE )],
+                                       `OBSERVACION 2023-1`)
          )
 
 
@@ -377,11 +389,11 @@ restOfNotFoundInfoProf <- noInfoProfs %>%
 
 finalProduct <- finalProduct %>%
   mutate(`OBSERVACION 2023-1` = if_else(IDENTIFICACION %in% restOfNotFoundInfoProf$IDENTIFICACION,
-                                        "No reportado en base de datos",
+                                        "No está en SIA",
                                         `OBSERVACION 2023-1`)
   ) 
 
 
-write_xlsx(finalProduct, "FormatoConObservaciones.xlsx")
+write_xlsx(finalProduct, "EntregaFinal.xlsx")
 
 
