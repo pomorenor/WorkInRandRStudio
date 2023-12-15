@@ -377,7 +377,7 @@ restOfNotFoundInfoProf <- noInfoProfs %>%
 
 finalProduct <- finalProduct %>%
   mutate(`OBSERVACION 2023-1` = if_else(IDENTIFICACION %in% restOfNotFoundInfoProf$IDENTIFICACION,
-                                        "No reportado en base de datos/ Curso sin inscritos",
+                                        "No reportado en base de datos",
                                         `OBSERVACION 2023-1`)
   ) 
 
