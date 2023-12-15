@@ -38,11 +38,13 @@ fechaspreviasconsideradas <- as.Date(fechaspreviasconsideradas)
   
 profsConSituacion <- ausentismo %>%
   group_by(APELLIDOSYNOMBRES) %>%
-  filter(`FECHA FINAL` == max(`FECHA FINAL`) | `FECHA FINAL` %in% fechaspreviasconsideradas)
+ # filter(`FECHA FINAL` == max(`FECHA FINAL`) | `FECHA FINAL` %in% fechaspreviasconsideradas)
+  filter(`FECHA FINAL` == max(`FECHA FINAL`))
+  
   
 profsConSituacion <- profsConSituacion %>%
   group_by(APELLIDOSYNOMBRES) %>%
-  filter(`FECHA FINAL` == max(`FECHA FINAL`))
+  filter(`FECHA FINAL` >= fechaDeCorte)
   
 Nombre_Y_SituacionProf <- data.frame("APELLIDOS Y NOMBRES" = profsConSituacion$APELLIDOSYNOMBRES,
                                   "SITUACIÓN ADMINISTRATIVA 2023 1" = profsConSituacion$NOMBREFORMATO)
@@ -245,13 +247,18 @@ write_xlsx(totalData, "DATAPREPEAMA.xlsx")
   
   
 peamaPerProf <- data.frame("CURSOS.PEAMA.2023.1" = peamaPerProf$PEAMA_count, "IDENTIFICACIÓN" = peamaPerProf$DOC_DOCENTE )
+colnames(peamaPerProf)
+peamaPerProf <- peamaPerProf %>%
+  filter(IDENTIFICACIÓN %in% planta_docente_toworkwith$IDENTIFICACION)
+
+
   
 totalData$CURSOS.PEAMA.2023.1 <- as.integer(totalData$CURSOS.PEAMA.2023.1)
 addPeama <- rows_update(totalData, peamaPerProf, by = "IDENTIFICACIÓN", unmatched = "ignore")
 
 
 
-addSituaCargo <- merge(addPeama, situaCargoData, by = "IDENTIFICACIÓN", all.x = TRUE)
+addSituaCargo <- merge(situaCargoData, addPeama, by = "IDENTIFICACIÓN", all.x = TRUE, all.y =  TRUE)
 
 write_xlsx(addSituaCargo, "addSituaCargo.xlsx")
 
@@ -394,6 +401,6 @@ finalProduct <- finalProduct %>%
   ) 
 
 
-write_xlsx(finalProduct, "EntregaFinal.xlsx")
+write_xlsx(finalProduct, "EntregaFinal2023-2.xlsx")
 
 
